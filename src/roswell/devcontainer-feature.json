@@ -1,0 +1,111 @@
+{
+    "id": "roswell",
+    "version": "1.0.0",
+    "name": "Roswell",
+    "documentationURL": "https://github.com/egao1980/features/tree/main/src/rowsell",
+    "description": "Installs the provided version of Roswell, as well as a chosen Common Lisp implementation, and other common CL utilities.",
+    "options": {
+      "version": {
+        "type": "string",
+        "proposals": [
+          "latest",
+          "os-provided",
+          "none",
+          "24.10.115",
+          "20.06.14.107",
+          "19.12.13.103"
+        ],
+        "default": "latest",
+        "description": "Select a Roswell version to install."
+      },
+      "quicklispVersion": {
+        "type": "string",
+        "proposals": [
+          "latest",
+          "none",
+          "2024-10-12",
+          "2023-10-21",
+          "2023-09-06",
+          "2023-06-18",
+          "2023-02-15",
+          "2022-11-07"
+        ],
+        "default": "latest",
+        "description": "Select a Quicklisp dist version to use."
+      },
+      "installUltralisp": {
+        "type": "boolean",
+        "default": false,
+        "description": "Flag indicating whether or not to install the Ultralisp distribution. Default is 'false'."
+      },
+      "installTools": {
+        "type": "boolean",
+        "default": true,
+        "description": "Flag indicating whether or not to install the tools specified via the 'toolsToInstall' option. Default is 'false'."
+      },
+      "toolsToInstall": {
+        "type": "string",
+        "default": "qlot",
+        "description": "Comma-separated list of tools to install when 'installTools' is true. Defaults to a set of common tools like qlot."
+      },
+      "installLisp": {
+        "type": "string",
+        "proposals": [
+          "abcl-bin",
+          "allegro",
+          "ccl-bin",
+          "clasp-bin",
+          "clasp",
+          "clisp",
+          "cmu-bin",
+          "ecl",
+          "mkcl",
+          "sbcl-bin",
+          "sbcl",
+          "none"
+        ],
+        "default": "none",
+        "description": "Common Lisp implementation to install in Roswell."
+      },
+      "useLisp":{
+        "type": "string",
+        "proposals": [
+          "abcl-bin",
+          "allegro",
+          "ccl-bin",
+          "clasp-bin",
+          "clasp",
+          "clisp",
+          "cmu-bin",
+          "ecl",
+          "lispworks",
+          "mkcl",
+          "sbcl-bin",
+          "sbcl",
+          "sbcl/system",
+          "none"
+        ],
+        "default": "sbcl-bin",
+        "description": "Common Lisp implementation to use in Roswell."
+      },
+      "installPath": {
+        "type": "string",
+        "default": "/usr/local/roswell",
+        "description": "The path where roswell will be installed."
+      },
+      "httpProxy": {
+        "type": "string",
+        "default": "",
+        "description": "Connect to GPG keyservers using a proxy for fetching source code signatures by configuring this option"
+      }
+    },
+    "containerEnv": {
+      "ROSWELL_PATH": "/usr/local/roswell/current",
+      "PATH": "/usr/local/roswell/current/bin:${PATH}"
+    },
+    "customizations": {
+    },
+    "installsAfter": [
+      "ghcr.io/devcontainers/features/common-utils"
+    ]
+  }

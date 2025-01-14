@@ -1,0 +1,59 @@
+{
+    "roswell_ubuntu": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            }
+        }
+    },
+    "roswell_alpine": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            }
+        }
+    },
+    "roswell_centos8": {
+        "image": "centos:centos8",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            }
+        }
+    },
+    "roswell_almalinux": {
+        "image": "almalinux:latest",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            }
+        }
+    },
+    "roswell_install_sbcl": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true,
+                "installLisp": "sbcl"
+            }
+        }
+    },
+    "roswell_install_sbcl_use": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true,
+                "installLisp": "sbcl/2.5.0",
+                "useLisp": "sbcl/2.5.0"
+            }
+        }
+    }
+}
