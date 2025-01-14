@@ -13,12 +13,14 @@ jobs:
     strategy:
       matrix:
         features:
-          - color
-          - hello
+          - roswell
         baseImage:
           - debian:latest
           - ubuntu:latest
+          - centos:centos8
+          - almalinux:latest
           - mcr.microsoft.com/devcontainers/base:ubuntu
+          - mcr.microsoft.com/devcontainers/base:alpine
     steps:
       - uses: actions/checkout@v4
 
@@ -34,8 +36,7 @@ jobs:
     strategy:
       matrix:
         features:
-          - color
-          - hello
+          - roswell
     steps:
       - uses: actions/checkout@v4
 
