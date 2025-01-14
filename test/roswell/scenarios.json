@@ -17,6 +17,23 @@
             }
         }
     },
+    "roswell_qlot_no_ultralisp": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest"
+            }
+        }
+    },
+    "roswell_quicklisp_version": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "quicklispVersion": "2023-02-15"
+            }
+        }
+    },
     "roswell_centos8": {
         "image": "centos:centos8",
         "features": {

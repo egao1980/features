@@ -363,7 +363,7 @@ install_user_package() {
     if [ "$INSTALL_UNDER_ROOT" = false ]; then
         ROSWELL_HOME="/home/$USERNAME/.roswell"
     fi
-    sudo_if "${ROSWELL_SRC}" follow-dependency=t install "$PACKAGE"
+    sudo_if "${ROSWELL_SRC}" "follow-dependency=t" install "$PACKAGE"
 }
 
 run_lisp() {
@@ -594,12 +594,29 @@ if [ "$USELISP" != "none" ]; then
     sudo_if ${ROSWELL_SRC} use $USELISP
 fi 
 
+INSTALL_UNDER_ROOT=true
+if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
+    INSTALL_UNDER_ROOT=false
+fi
+
+if [[ -n "${QUICKLISPVERSION}" ]] && [[ "${QUICKLISPVERSION}" != "latest" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
+    echo 'Updating Quicklisp dist version...'
+    LISP_FILE=$(mktemp)
+    cat << EOF > $LISP_FILE
+(ql-dist:install-dist "http://beta.quicklisp.org/dist/quicklisp/${QUICKLISPVERSION}/distinfo.txt" :prompt nil :replace t)
+EOF
+    chmod guoa+r $LISP_FILE
+    run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
+    rm -f "$LISP_FILE"
+fi
+
 if [[ "${INSTALLULTRALISP}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
     echo 'Installing Ultralisp...'
     LISP_FILE=$(mktemp)
     cat << 'EOF' > $LISP_FILE
 (ql-dist:install-dist "http://dist.ultralisp.org/" :prompt nil)
 EOF
+    chmod guoa+r $LISP_FILE
     run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
     rm -f "$LISP_FILE"
 fi
@@ -608,8 +625,11 @@ fi
 if [[ "${INSTALL_CL_TOOLS}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
     echo 'Installing Common Lisp tools...'
     for util in "${DEFAULT_UTILS[@]}"; do
-        if ! type ${util} > /dev/null 2>&1; then
-            install_user_package $INSTALL_UNDER_ROOT ${util}
+        if [ -z "${util}" ]; then
+            echo "Skipping empty tool..."
+        elif ! type ${util} > /dev/null 2>&1; then
+            echo "Installing ${util}..."
+            install_user_package $INSTALL_UNDER_ROOT "${util}"
         else
             echo "${util} already installed. Skipping."
         fi
