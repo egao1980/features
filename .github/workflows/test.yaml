@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         features:
-          - roswel
+          - roswell
           - lem
         baseImage:
           - debian:latest
