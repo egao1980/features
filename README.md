@@ -51,3 +51,35 @@ commands:
     }
 }
 ```
+
+## `lem`
+
+This feature provides a Lem project's `lem` editor. The feature depends on `roswell` with `qlot` installed and will automatically install the corresponding feature if not already present in the Devcontainer definition.
+
+### Basic setup with latest Git version of Lem
+
+```jsonc
+{
+    "image": "mcr.microsoft.com/devcontainers/base:alpine",
+    "features": {
+        "ghcr.io/egao1980/features/lem:1": {
+            "version": "latest"
+        }
+    }
+}
+```
+
+### Selecting a specific version of Lem 
+
+This uses `version` option to select git tag / branch name to install.
+
+```jsonc
+{
+    "image": "mcr.microsoft.com/devcontainers/base:alpine",
+    "features": {
+        "ghcr.io/egao1980/features/lem:1": {
+            "version": "v2.2.0"
+        }
+    }
+}
+```
