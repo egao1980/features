@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         features:
-          - roswell
+          - roswel
+          - lem
         baseImage:
           - debian:latest
           - ubuntu:latest
@@ -37,6 +38,7 @@ jobs:
       matrix:
         features:
           - roswell
+          - lem
     steps:
       - uses: actions/checkout@v4
 
