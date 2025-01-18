@@ -331,6 +331,7 @@ case ${ADJUSTED_ID} in
             tk-dev \
             uuid-dev \
             xz-utils \
+            xdg-utils \
             zlib1g-dev"
         ;;
     alpine)
@@ -354,6 +355,7 @@ case ${ADJUSTED_ID} in
             sbcl \
             tar \
             xz \
+            xdg-utils \
             zlib-dev"
         ;;
     rhel)
@@ -376,6 +378,7 @@ case ${ADJUSTED_ID} in
             which \
             xz-devel \
             xz \
+            xdg-utils \
             zlib-devel"
         if ! type curl >/dev/null 2>&1; then
             REQUIRED_PKGS="${REQUIRED_PKGS} \
