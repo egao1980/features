@@ -1,0 +1,26 @@
+{
+    "lem_alpine": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            },
+            "lem": {
+                "version": "latest"
+            }
+        }
+    },
+    "lem_specific_version": {
+        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+        "features": {
+            "roswell": {
+                "version": "latest",
+                "installUltralisp": true
+            },
+            "lem": {
+                "version": "v2.2.0"
+            }
+        }
+    }
+}

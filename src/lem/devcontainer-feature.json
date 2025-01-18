@@ -1,0 +1,35 @@
+{
+    "id": "lem",
+    "version": "1.0.0",
+    "name": "Lem editor",
+    "documentationURL": "https://github.com/egao1980/features/tree/main/src/lem",
+    "description": "Installs the provided version of Lem Common Lisp editor.",
+    "dependsOn": {
+      "./roswell": {
+        "version": "ondemand",
+        "installTools": true,
+        "toolsToInstall": "qlot"
+      }
+    },
+    "options": {
+      "version": {
+        "type": "string",
+        "proposals": [
+          "latest",
+          "lem-project/lem",
+          "none"
+        ],
+        "default": "latest",
+        "description": "Select a Lem version to install."
+      }
+    },
+    "containerEnv": {
+    },
+    "customizations": {
+    },
+    "installsAfter": [
+      "ghcr.io/devcontainers/features/common-utils",
+      "ghcr.io/devcontainers/features/git",
+      "ghcr.io/egao1980/features/roswell"
+    ]
+  }

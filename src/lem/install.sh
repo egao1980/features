@@ -7,20 +7,8 @@
 # Docs: https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/roswell.md
 # Maintainer: The VS Code and Codespaces Teams
 
-ROSWELL_VERSION="${VERSION:-"latest"}" # 'system' or 'os-provided' checks the base image first, else installs 'latest'
-INSTALL_CL_TOOLS="${INSTALLTOOLS:-"true"}"
-BUILD_FROM_SOURCE="${OPTIMIZE:-"false"}"
-ROSWELL_INSTALL_PATH="${INSTALLPATH:-"/usr/local/roswell"}"
-OVERRIDE_DEFAULT_VERSION="${OVERRIDEDEFAULTVERSION:-"true"}"
+LEM_VERSION="${VERSION:-"latest"}" # 'system' or 'os-provided' checks the base image first, else installs 'latest'
 USERNAME="${USERNAME:-"${_REMOTE_USER:-"automatic"}"}"
-UPDATE_RC="${UPDATE_RC:-"true"}"
-
-echo "Roswell verion: ${ROSWELL_VERSION}"
-
-# Comma-separated list of additional tools to be installed via pipx.
-IFS="," read -r -a DEFAULT_UTILS <<< "${TOOLSTOINSTALL:-qlot}"
-
-KEYSERVER_PROXY="${HTTPPROXY:-"${HTTP_PROXY:-""}"}"
 
 set -e
 
@@ -256,108 +244,24 @@ check_packages() {
     esac
 }
 
-add_symlink() {
-    if [[ ! -d "${CURRENT_PATH}" ]]; then
-        ln -s -r "${INSTALL_PATH}" "${CURRENT_PATH}"
-    fi
-
-    if [ "${OVERRIDE_DEFAULT_VERSION}" = "true" ]; then
-        if [[ $(ls -l ${CURRENT_PATH}) != *"-> ${INSTALL_PATH}"* ]] ; then
-            rm "${CURRENT_PATH}"
-            ln -s -r "${INSTALL_PATH}" "${CURRENT_PATH}"
-        fi
-    fi
-}
-
-install_openssl3() {
-    mkdir /tmp/openssl3
-    (
-        cd /tmp/openssl3
-        openssl3_version="3.0"
-        # Find version using soft match
-        find_version_from_git_tags openssl3_version "https://github.com/openssl/openssl" "openssl-"
-        local tgz_filename="openssl-${openssl3_version}.tar.gz"
-        local tgz_url="https://github.com/openssl/openssl/releases/download/openssl-${openssl3_version}/${tgz_filename}"
-        echo "Downloading ${tgz_filename}..."
-        curl -sSL -o "/tmp/openssl3/${tgz_filename}" "${tgz_url}"
-        tar xzf ${tgz_filename}
-        cd openssl-${openssl3_version}
-        ./config --libdir=lib
-        make -j $(nproc)
-        make install_dev
-    )
-    rm -rf /tmp/openssl3
-}
-
-install_roswell_src() {
-    VERSION=$1
-    INSTALL_PATH="${ROSWELL_INSTALL_PATH}/${VERSION}"
-
-    # Check if the specified Roswell version is already installed
-    if [ -d "${INSTALL_PATH}" ]; then
-        echo "(!) Roswell version ${VERSION} already exists."
-    else
-        mkdir -p /tmp/roswell-src ${INSTALL_PATH}
-        cd /tmp/roswell-src
-        roswell_tgz_filename="roswell-${VERSION}.tgz"
-        roswell_tgz_url="https://github.com/roswell/roswell/archive/refs/tags/v${VERSION}.tar.gz"
-        echo "Downloading ${roswell_tgz_filename}..."
-        curl -sSL -o "/tmp/roswell-src/${roswell_tgz_filename}" "${roswell_tgz_url}"
-    fi
-}
-
-install_from_source() {
-    VERSION=$1
-    echo "(*) Building Roswell ${VERSION} from source..."
-
-    # Some platforms/os versions need modern versions of openssl installed
-    # via common package repositories, for now rhel-7 family, use case statement to
-    # make it easy to expand
-    SSL_INSTALL_PATH="/usr/local"
-    case ${VERSION_CODENAME} in
-        centos7|rhel7)
-            check_packages perl-IPC-Cmd
-            install_openssl3
-            ADDL_CONFIG_ARGS="--with-openssl=${SSL_INSTALL_PATH} --with-openssl-rpath=${SSL_INSTALL_PATH}/lib"
-            ;;
-    esac
-
-    install_roswell_src "${VERSION}"
-    # Untar and build
-    tar -xzf "/tmp/roswell-src/${roswell_tgz_filename}" -C "/tmp/roswell-src" --strip-components=1
-    local config_args=""
-    if [ -n "${ADDL_CONFIG_ARGS}" ]; then
-        config_args="${config_args} ${ADDL_CONFIG_ARGS}"
-    fi
-    ./bootstrap
-    ./configure --prefix="${INSTALL_PATH}" ${config_args}
-    make -j 8
-    make install
-
-    cd /tmp
-    rm -rf /tmp/roswell-src ${GNUPGHOME} /tmp/vscdc-settings.env
-    add_symlink
-}
-
 sudo_if() {
     COMMAND="$*"
     echo "$COMMAND"
     if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
-        su - "$USERNAME" -c "$COMMAND"
+        su - "$USERNAME" -c "bash -l -c \"PATH=\"\$PATH:/usr/local/roswell/current/bin:\$HOME/.roswell/bin\" $COMMAND\""
     else
-        $COMMAND
+        PATH="$PATH:/usr/local/roswell/current/bin:$HOME/.roswell/bin"  $COMMAND
     fi
 }
 
 install_user_package() {
     INSTALL_UNDER_ROOT="$1"
     PACKAGE="$2"
-
     ROSWELL_HOME="/root/.roswell"
     if [ "$INSTALL_UNDER_ROOT" = false ]; then
         ROSWELL_HOME="/home/$USERNAME/.roswell"
     fi
-    sudo_if "${ROSWELL_SRC}" "follow-dependency=t" install "$PACKAGE"
+    sudo_if ros follow-dependency=t install "$PACKAGE"
 }
 
 run_lisp() {
@@ -369,36 +273,9 @@ run_lisp() {
         ROSWELL_HOME="/home/$USERNAME/.roswell"
     fi
 
-    sudo_if "${ROSWELL_SRC}" -l "$LISP_FILE"
+    sudo_if ros -l "$LISP_FILE"
 }
 
-
-install_roswell() {
-    version=$1
-    # If the os-provided versions are "good enough", detect that and bail out.
-    if [ ${version} = "os-provided" ] || [ ${version} = "system" ]; then
-        echo "ROSWELL ${ROSWELL_VERSION}"
-        check_packages roswell
-
-        INSTALL_PATH="/usr"
-        local current_bin_path="${CURRENT_PATH}/bin"
-        if [ "${OVERRIDE_DEFAULT_VERSION}" = "true" ]; then
-            rm -rf "${current_bin_path}"
-        fi
-        if [ ! -d "${current_bin_path}" ] ; then
-            mkdir -p "${current_bin_path}"
-            # Add an interpreter symlink but point it to "/usr" since roswell is at /usr/bin/roswell, add other alises
-            ln -s "${INSTALL_PATH}/bin/ros" "${current_bin_path}/ros"
-        fi
-
-        should_install_from_source=false
-   else
-        should_install_from_source=true
-    fi
-    if [ "${should_install_from_source}" = "true" ]; then
-        install_from_source $version
-    fi
-}
 
 # Ensure that login shells get the correct path if the user updated the PATH using ENV.
 rm -f /etc/profile.d/00-restore-env.sh
@@ -442,6 +319,7 @@ case ${ADJUSTED_ID} in
             dirmngr \
             patchelf \
             gcc \
+            g++ \
             libcurl4-openssl-dev \
             libffi-dev \
             libncurses5-dev \
@@ -450,6 +328,7 @@ case ${ADJUSTED_ID} in
             libssl-dev \
             make \
             tar \
+            tk-dev \
             uuid-dev \
             xz-utils \
             zlib1g-dev"
@@ -463,6 +342,7 @@ case ${ADJUSTED_ID} in
             ca-certificates \
             curl \
             gcc \
+            g++ \
             bzip2-dev \
             curl-dev \
             libffi-dev \
@@ -484,6 +364,7 @@ case ${ADJUSTED_ID} in
             ca-certificates \
             findutils \
             gcc \
+            gcc-c++ \
             gnupg2 \
             libcurl-devel \
             libffi-devel \
@@ -514,126 +395,25 @@ esac
 
 check_packages ${REQUIRED_PKGS}
 
-SELECTED_VERSION="${ROSWELL_VERSION}"
-if [ "${SELECTED_VERSION}" != "none" ] && [ ${SELECTED_VERSION} != "os-provided" ] && [ ${SELECTED_VERSION} != "system" ]; then
-    if ! type git > /dev/null 2>&1; then
-        check_packages git
-    fi
-
-    if [ "${SELECTED_VERSION}" == "ondemand" ]; then
-        if ! type ros > /dev/null 2>&1 && [ ! -f "${ROSWELL_INSTALL_PATH}/current/bin/ros" ]; then
-            SELECTED_VERSION="latest"
-        else
-            SELECTED_VERSION="none"
-        fi
-    fi
-    if [ "${SELECTED_VERSION}" != "none" ]; then
-        # Find version using soft match
-        find_version_from_git_tags SELECTED_VERSION "https://github.com/roswell/roswell"
-    fi
-fi
-
-echo "Selected Roswell version for installation: ${SELECTED_VERSION}..."
-
-# Install Roswell from source if needed
-if [ "${SELECTED_VERSION}" != "none" ] && [ ! -d "${ROSWELL_INSTALL_PATH}/${SELECTED_VERSION}" ]; then
-    if ! cat /etc/group | grep -e "^roswell:" > /dev/null 2>&1; then
-        groupadd -r roswell
-    fi
-    usermod -a -G roswell "${USERNAME}"
-
-    CURRENT_PATH="${ROSWELL_INSTALL_PATH}/current"
-
-    install_roswell ${SELECTED_VERSION}
-
-    # Additional roswell versions to be installed but not be set as default.
-    if [ ! -z "${ADDITIONAL_VERSIONS}" ]; then
-        OLD_INSTALL_PATH="${INSTALL_PATH}"
-        OLDIFS=$IFS
-        IFS=","
-            read -a additional_versions <<< "$ADDITIONAL_VERSIONS"
-            for version in "${additional_versions[@]}"; do
-                OVERRIDE_DEFAULT_VERSION="false"
-                install_roswell $version
-            done
-        INSTALL_PATH="${OLD_INSTALL_PATH}"
-        IFS=$OLDIFS
-    fi
-
-    if [ ${SELECTED_VERSION} != "os-provided" ] && [ ${SELECTED_VERSION} != "system" ]; then
-        updaterc "if [[ \"\${PATH}\" != *\"${CURRENT_PATH}/bin\"* ]]; then export PATH=\"${CURRENT_PATH}/bin:\${PATH}\"; fi"
-        updaterc "export PATH=\"\${PATH}:\$HOME/.roswell/bin\""
-        PATH="${INSTALL_PATH}/bin:${PATH}"
-    fi
-
-    # Updates the symlinks for os-provided, or the installed roswell version in other cases
-    chown -R "${USERNAME}:roswell" "${ROSWELL_INSTALL_PATH}"
-    chmod -R g+r+w "${ROSWELL_INSTALL_PATH}"
-    find "${ROSWELL_INSTALL_PATH}" -type d -print0 | xargs -0 -n 1 chmod g+s
-
-    ROSWELL_SRC="${INSTALL_PATH}/bin/ros"
-    # Run initial setup
-    if [ ${ADJUSTED_ID} = "alpine" ]; then
-        sudo_if ${ROSWELL_SRC} lisp=sbcl-bin/system setup
-        sudo_if ${ROSWELL_SRC} install sbcl-bin
-        sudo_if ${ROSWELL_SRC} use sbcl-bin
-    else
-        sudo_if ${ROSWELL_SRC} setup
-    fi
-else
-    ROSWELL_SRC=$(which ros)
-fi
-
-
-if [ "$INSTALLLISP" != "none" ]; then
-    sudo_if ${ROSWELL_SRC} install $INSTALLLISP
-fi
-
-if [ "$USELISP" != "none" ]; then
-    sudo_if ${ROSWELL_SRC} use $USELISP
-fi 
-
 INSTALL_UNDER_ROOT=true
 if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
     INSTALL_UNDER_ROOT=false
 fi
 
-if [[ -n "${QUICKLISPVERSION}" ]] && [[ "${QUICKLISPVERSION}" != "latest" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
-    echo 'Updating Quicklisp dist version...'
-    LISP_FILE=$(mktemp)
-    cat << EOF > $LISP_FILE
-(ql-dist:install-dist "http://beta.quicklisp.org/dist/quicklisp/${QUICKLISPVERSION}/distinfo.txt" :prompt nil :replace t)
-EOF
-    chmod guoa+r $LISP_FILE
-    run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
-    rm -f "$LISP_FILE"
-fi
-
-if [[ "${INSTALLULTRALISP}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
-    echo 'Installing Ultralisp...'
-    LISP_FILE=$(mktemp)
-    cat << 'EOF' > $LISP_FILE
-(ql-dist:install-dist "http://dist.ultralisp.org/" :prompt nil)
-EOF
-    chmod guoa+r $LISP_FILE
-    run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
-    rm -f "$LISP_FILE"
-fi
-
-# Install Common Lisp tools if needed
-if [[ "${INSTALL_CL_TOOLS}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
-    echo 'Installing Common Lisp tools...'
-    for util in "${DEFAULT_UTILS[@]}"; do
-        if [ -z "${util}" ]; then
-            echo "Skipping empty tool..."
-        elif ! type ${util} > /dev/null 2>&1; then
-            echo "Installing ${util}..."
-            install_user_package $INSTALL_UNDER_ROOT "${util}"
-        else
-            echo "${util} already installed. Skipping."
-        fi
-    done
-fi
+# Install Lem from source if needed
+case "${LEM_VERSION}" in
+    latest)
+       install_user_package $INSTALL_UNDER_ROOT lem-project/lem
+       sudo_if lem --version
+       ;;
+    none)
+       echo "Skipping installation..."
+       ;;
+    *)
+       install_user_package $INSTALL_UNDER_ROOT lem-project/lem/${LEM_VERSION}
+       sudo_if lem --version
+       ;;
+esac
 
 # Clean up
 clean_up
