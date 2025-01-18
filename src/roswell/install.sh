@@ -439,6 +439,7 @@ case ${ADJUSTED_ID} in
             automake \
             ca-certificates \
             curl \
+            bzip2 \
             dirmngr \
             patchelf \
             gcc \
