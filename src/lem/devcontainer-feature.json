@@ -1,6 +1,6 @@
 {
     "id": "lem",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Lem editor",
     "documentationURL": "https://github.com/egao1980/features/tree/main/src/lem",
     "description": "Installs the provided version of Lem Common Lisp editor.",

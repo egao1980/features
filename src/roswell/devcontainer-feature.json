@@ -1,6 +1,6 @@
 {
     "id": "roswell",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Roswell",
     "documentationURL": "https://github.com/egao1980/features/tree/main/src/rowsell",
     "description": "Installs the provided version of Roswell, as well as a chosen Common Lisp implementation, and other common CL utilities.",
