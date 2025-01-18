@@ -2,6 +2,39 @@
 
 This repository contains a _collection_ features for developing Common Lisp software. Each sub-section below shows a sample `devcontainer.json` alongside example usage of the Feature.
 
+## General usage 
+
+Use Devcontainers to quickly spawn containers and work on Common Lisp projects without polluting your user configuration.
+
+Create a project folder and put the following to .devcontainer/devcontainer.json:
+
+```jsonc
+{
+    "image": "mcr.microsoft.com/devcontainers/base:alpine",
+    "features": {
+        "ghcr.io/egao1980/features/lem:1": {
+            "version": "latest"
+        }
+    }
+}
+```
+
+Then install Devcontainers CLI:
+
+```bash
+npm install -g @devcontainers/cli
+```
+
+... build container for your project:
+
+```bash
+devcontainer up --workspace-folder <project-folder>
+```
+
+Now you can run Lem Project editor up and running with latest Roswell, Qlot and SBCL installed:
+```bash
+devcontainer exec --workspace-folder <project-folder> lem
+```
 ## `roswell`
 
 This feature will install and configure `roswell` tool with the requested Common Lisp implementation and extra tools. A specific version of Quicklisp distribution could be specified. Ultralisp distribution can be added as well.
