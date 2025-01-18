@@ -5,7 +5,7 @@
     "documentationURL": "https://github.com/egao1980/features/tree/main/src/lem",
     "description": "Installs the provided version of Lem Common Lisp editor.",
     "dependsOn": {
-      "./roswell": {
+      "ghcr.io/egao1980/features/roswell": {
         "version": "ondemand",
         "installTools": true,
         "toolsToInstall": "qlot"
