@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-#-------------------------------------------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
-#-------------------------------------------------------------------------------------------------------------
-#
-# Docs: https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/roswell.md
-# Maintainer: The VS Code and Codespaces Teams
+# Installs Roswell, a Common Lisp environment manager.
+# https://github.com/egao1980/features/tree/main/src/roswell
 
 ROSWELL_VERSION="${VERSION:-"latest"}" # 'system' or 'os-provided' checks the base image first, else installs 'latest'
 INSTALL_CL_TOOLS="${INSTALLTOOLS:-"true"}"
@@ -15,12 +10,10 @@ OVERRIDE_DEFAULT_VERSION="${OVERRIDEDEFAULTVERSION:-"true"}"
 USERNAME="${USERNAME:-"${_REMOTE_USER:-"automatic"}"}"
 UPDATE_RC="${UPDATE_RC:-"true"}"
 
-echo "Roswell verion: ${ROSWELL_VERSION}"
+echo "Roswell version: ${ROSWELL_VERSION}"
 
-# Comma-separated list of additional tools to be installed via pipx.
+# Comma-separated list of additional tools to be installed via Roswell.
 IFS="," read -r -a DEFAULT_UTILS <<< "${TOOLSTOINSTALL:-qlot}"
-
-KEYSERVER_PROXY="${HTTPPROXY:-"${HTTP_PROXY:-""}"}"
 
 set -e
 
@@ -32,7 +25,7 @@ fi
 # Bring in ID, ID_LIKE, VERSION_ID, VERSION_CODENAME
 . /etc/os-release
 # Get an adjusted ID independent of distro variants
-MAJOR_VERSION_ID=$(echo ${VERSION_ID} | cut -d . -f 1)
+MAJOR_VERSION_ID=$(echo "${VERSION_ID}" | cut -d . -f 1)
 if [ "${ID}" = "debian" ] || [ "${ID_LIKE}" = "debian" ]; then
     ADJUSTED_ID="debian"
 elif [[ "${ID}" = "rhel" || "${ID}" = "fedora" || "${ID}" = "mariner" ||  "${ID}" = "alma" || "${ID_LIKE}" = *"alma"* || "${ID_LIKE}" = *"rhel"* || "${ID_LIKE}" = *"fedora"* || "${ID_LIKE}" = *"mariner"* ]]; then
@@ -49,7 +42,7 @@ else
     exit 1
 fi
 
-if [ "${ADJUSTED_ID}" = "rhel" ] && [ ${ID} != "rhel" ]; then
+if [ "${ADJUSTED_ID}" = "rhel" ] && [ "${ID}" != "rhel" ]; then
     # As of 1 July 2024, mirrorlist.centos.org no longer exists.
     # Update the repo files to reference vault.centos.org.
     sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo
@@ -58,11 +51,11 @@ if [ "${ADJUSTED_ID}" = "rhel" ] && [ ${ID} != "rhel" ]; then
 fi
 
 # To find some devel packages, some rhel need to enable specific extra repos, but not on RedHat ubi images...
-INSTALL_CMD_ADDL_REPO=""
-if [ ${ADJUSTED_ID} = "rhel" ] && [ ${ID} != "rhel" ]; then
-    if [ ${MAJOR_VERSION_ID} = "8" ]; then
+INSTALL_CMD_ADDL_REPOS=""
+if [ "${ADJUSTED_ID}" = "rhel" ] && [ "${ID}" != "rhel" ]; then
+    if [ "${MAJOR_VERSION_ID}" = "8" ]; then
         INSTALL_CMD_ADDL_REPOS="--enablerepo powertools"
-    elif [ ${MAJOR_VERSION_ID} = "9" ]; then
+    elif [ "${MAJOR_VERSION_ID}" = "9" ]; then
         INSTALL_CMD_ADDL_REPOS="--enablerepo crb"
     fi
 fi
@@ -118,11 +111,11 @@ updaterc() {
                 _zshrc=/etc/zshrc
             ;;
         esac
-        if [[ "$(cat ${_bashrc})" != *"$1"* ]]; then
-            echo -e "$1" >> ${_bashrc}
+        if [[ "$(cat "${_bashrc}")" != *"$1"* ]]; then
+            echo -e "$1" >> "${_bashrc}"
         fi
-        if [ -f "${_zshrc}" ] && [[ "$(cat ${_zshrc})" != *"$1"* ]]; then
-            echo -e "$1" >> ${_zshrc}
+        if [ -f "${_zshrc}" ] && [[ "$(cat "${_zshrc}")" != *"$1"* ]]; then
+            echo -e "$1" >> "${_zshrc}"
         fi
     fi
 }
@@ -211,7 +204,7 @@ pkg_mgr_update() {
             fi
             ;;
         rhel)
-            if [ ${PKG_MGR_CMD} = "microdnf" ]; then
+            if [ "${PKG_MGR_CMD}" = "microdnf" ]; then
                 if [ "$(ls /var/cache/yum/* 2>/dev/null | wc -l)" = 0 ]; then
                     echo "Running ${PKG_MGR_CMD} makecache ..."
                     ${PKG_MGR_CMD} makecache
@@ -323,29 +316,27 @@ install_from_source() {
     esac
 
     install_roswell_src "${VERSION}"
-    # Untar and build
-    tar -xzf "/tmp/roswell-src/${roswell_tgz_filename}" -C "/tmp/roswell-src" --strip-components=1
+    local tgz="/tmp/roswell-src/roswell-${VERSION}.tgz"
+    tar -xzf "${tgz}" -C "/tmp/roswell-src" --strip-components=1
     local config_args=""
     if [ -n "${ADDL_CONFIG_ARGS}" ]; then
         config_args="${config_args} ${ADDL_CONFIG_ARGS}"
     fi
     ./bootstrap
     ./configure --prefix="${INSTALL_PATH}" ${config_args}
-    make -j 8
+    make -j "$(nproc)"
     make install
 
     cd /tmp
-    rm -rf /tmp/roswell-src ${GNUPGHOME} /tmp/vscdc-settings.env
+    rm -rf /tmp/roswell-src
     add_symlink
 }
 
 sudo_if() {
-    COMMAND="$*"
-    echo "$COMMAND"
     if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
-        su - "$USERNAME" -c "$COMMAND"
+        su - "$USERNAME" -c "$(printf '%q ' "$@")"
     else
-        $COMMAND
+        "$@"
     fi
 }
 
@@ -357,7 +348,7 @@ install_user_package() {
     if [ "$INSTALL_UNDER_ROOT" = false ]; then
         ROSWELL_HOME="/home/$USERNAME/.roswell"
     fi
-    sudo_if "${ROSWELL_SRC}" "follow-dependency=t" install "$PACKAGE"
+    sudo_if "${ROSWELL_SRC}" follow-dependency=t install "$PACKAGE"
 }
 
 run_lisp() {
@@ -376,7 +367,7 @@ run_lisp() {
 install_roswell() {
     version=$1
     # If the os-provided versions are "good enough", detect that and bail out.
-    if [ ${version} = "os-provided" ] || [ ${version} = "system" ]; then
+    if [ "${version}" = "os-provided" ] || [ "${version}" = "system" ]; then
         echo "ROSWELL ${ROSWELL_VERSION}"
         check_packages roswell
 
@@ -503,7 +494,7 @@ case ${ADJUSTED_ID} in
         fi
         # Redhat ubi8 and ubi9 do not have some packages by default, only add them
         # if we're not on RedHat ...
-        if [ ${ID} != "rhel" ]; then
+        if [ "${ID}" != "rhel" ]; then
             REQUIRED_PKGS="${REQUIRED_PKGS} \
                 gdbm-devel \
                 readline-devel \
@@ -516,7 +507,7 @@ esac
 check_packages ${REQUIRED_PKGS}
 
 SELECTED_VERSION="${ROSWELL_VERSION}"
-if [ "${SELECTED_VERSION}" != "none" ] && [ ${SELECTED_VERSION} != "os-provided" ] && [ ${SELECTED_VERSION} != "system" ]; then
+if [ "${SELECTED_VERSION}" != "none" ] && [ "${SELECTED_VERSION}" != "os-provided" ] && [ "${SELECTED_VERSION}" != "system" ]; then
     if ! type git > /dev/null 2>&1; then
         check_packages git
     fi
@@ -538,7 +529,7 @@ echo "Selected Roswell version for installation: ${SELECTED_VERSION}..."
 
 # Install Roswell from source if needed
 if [ "${SELECTED_VERSION}" != "none" ] && [ ! -d "${ROSWELL_INSTALL_PATH}/${SELECTED_VERSION}" ]; then
-    if ! cat /etc/group | grep -e "^roswell:" > /dev/null 2>&1; then
+    if ! grep -q "^roswell:" /etc/group 2>/dev/null; then
         groupadd -r roswell
     fi
     usermod -a -G roswell "${USERNAME}"
@@ -548,7 +539,7 @@ if [ "${SELECTED_VERSION}" != "none" ] && [ ! -d "${ROSWELL_INSTALL_PATH}/${SELE
     install_roswell ${SELECTED_VERSION}
 
     # Additional roswell versions to be installed but not be set as default.
-    if [ ! -z "${ADDITIONAL_VERSIONS}" ]; then
+    if [ -n "${ADDITIONAL_VERSIONS}" ]; then
         OLD_INSTALL_PATH="${INSTALL_PATH}"
         OLDIFS=$IFS
         IFS=","
@@ -561,10 +552,20 @@ if [ "${SELECTED_VERSION}" != "none" ] && [ ! -d "${ROSWELL_INSTALL_PATH}/${SELE
         IFS=$OLDIFS
     fi
 
-    if [ ${SELECTED_VERSION} != "os-provided" ] && [ ${SELECTED_VERSION} != "system" ]; then
+    if [ "${SELECTED_VERSION}" != "os-provided" ] && [ "${SELECTED_VERSION}" != "system" ]; then
         updaterc "if [[ \"\${PATH}\" != *\"${CURRENT_PATH}/bin\"* ]]; then export PATH=\"${CURRENT_PATH}/bin:\${PATH}\"; fi"
         updaterc "export PATH=\"\${PATH}:\$HOME/.roswell/bin\""
         PATH="${INSTALL_PATH}/bin:${PATH}"
+
+        # containerEnv in devcontainer-feature.json hardcodes the default path.
+        # If installPath differs, write a profile.d override for interactive shells.
+        if [ "${ROSWELL_INSTALL_PATH}" != "/usr/local/roswell" ]; then
+            cat > /etc/profile.d/01-roswell-path.sh <<PATHEOF
+export ROSWELL_PATH="${ROSWELL_INSTALL_PATH}/current"
+export PATH="${ROSWELL_INSTALL_PATH}/current/bin:\$PATH:\$HOME/.roswell/bin"
+PATHEOF
+            chmod +x /etc/profile.d/01-roswell-path.sh
+        fi
     fi
 
     # Updates the symlinks for os-provided, or the installed roswell version in other cases
@@ -574,12 +575,12 @@ if [ "${SELECTED_VERSION}" != "none" ] && [ ! -d "${ROSWELL_INSTALL_PATH}/${SELE
 
     ROSWELL_SRC="${INSTALL_PATH}/bin/ros"
     # Run initial setup
-    if [ ${ADJUSTED_ID} = "alpine" ]; then
-        sudo_if ${ROSWELL_SRC} lisp=sbcl-bin/system setup
-        sudo_if ${ROSWELL_SRC} install sbcl-bin
-        sudo_if ${ROSWELL_SRC} use sbcl-bin
+    if [ "${ADJUSTED_ID}" = "alpine" ]; then
+        sudo_if "${ROSWELL_SRC}" lisp=sbcl-bin/system setup
+        sudo_if "${ROSWELL_SRC}" install sbcl-bin
+        sudo_if "${ROSWELL_SRC}" use sbcl-bin
     else
-        sudo_if ${ROSWELL_SRC} setup
+        sudo_if "${ROSWELL_SRC}" setup
     fi
 else
     ROSWELL_SRC=$(which ros)
@@ -587,12 +588,12 @@ fi
 
 
 if [ "$INSTALLLISP" != "none" ]; then
-    sudo_if ${ROSWELL_SRC} install $INSTALLLISP
+    sudo_if "${ROSWELL_SRC}" install "$INSTALLLISP"
 fi
 
 if [ "$USELISP" != "none" ]; then
-    sudo_if ${ROSWELL_SRC} use $USELISP
-fi 
+    sudo_if "${ROSWELL_SRC}" use "$USELISP"
+fi
 
 INSTALL_UNDER_ROOT=true
 if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
@@ -600,24 +601,29 @@ if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
 fi
 
 if [[ -n "${QUICKLISPVERSION}" ]] && [[ "${QUICKLISPVERSION}" != "latest" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
+    # Validate date-like format to prevent Lisp code injection
+    if ! [[ "${QUICKLISPVERSION}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+        echo "ERROR: quicklispVersion must be a date (YYYY-MM-DD), got '${QUICKLISPVERSION}'" >&2
+        exit 1
+    fi
     echo 'Updating Quicklisp dist version...'
     LISP_FILE=$(mktemp)
-    cat << EOF > $LISP_FILE
-(ql-dist:install-dist "http://beta.quicklisp.org/dist/quicklisp/${QUICKLISPVERSION}/distinfo.txt" :prompt nil :replace t)
+    cat << EOF > "$LISP_FILE"
+(ql-dist:install-dist "https://beta.quicklisp.org/dist/quicklisp/${QUICKLISPVERSION}/distinfo.txt" :prompt nil :replace t)
 EOF
-    chmod guoa+r $LISP_FILE
-    run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
+    chmod a+r "$LISP_FILE"
+    run_lisp "$INSTALL_UNDER_ROOT" "$LISP_FILE"
     rm -f "$LISP_FILE"
 fi
 
 if [[ "${INSTALLULTRALISP}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
     echo 'Installing Ultralisp...'
     LISP_FILE=$(mktemp)
-    cat << 'EOF' > $LISP_FILE
-(ql-dist:install-dist "http://dist.ultralisp.org/" :prompt nil)
+    cat << 'EOF' > "$LISP_FILE"
+(ql-dist:install-dist "https://dist.ultralisp.org/" :prompt nil)
 EOF
-    chmod guoa+r $LISP_FILE
-    run_lisp $INSTALL_UNDER_ROOT $LISP_FILE
+    chmod a+r "$LISP_FILE"
+    run_lisp "$INSTALL_UNDER_ROOT" "$LISP_FILE"
     rm -f "$LISP_FILE"
 fi
 
@@ -627,9 +633,9 @@ if [[ "${INSTALL_CL_TOOLS}" = "true" ]] && [[ -n "${ROSWELL_SRC}" ]]; then
     for util in "${DEFAULT_UTILS[@]}"; do
         if [ -z "${util}" ]; then
             echo "Skipping empty tool..."
-        elif ! type ${util} > /dev/null 2>&1; then
+        elif ! type "${util}" > /dev/null 2>&1; then
             echo "Installing ${util}..."
-            install_user_package $INSTALL_UNDER_ROOT "${util}"
+            install_user_package "$INSTALL_UNDER_ROOT" "${util}"
         else
             echo "${util} already installed. Skipping."
         fi

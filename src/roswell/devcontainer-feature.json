@@ -1,8 +1,8 @@
 {
     "id": "roswell",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "name": "Roswell",
-    "documentationURL": "https://github.com/egao1980/features/tree/main/src/rowsell",
+    "documentationURL": "https://github.com/egao1980/features/tree/main/src/roswell",
     "description": "Installs the provided version of Roswell, as well as a chosen Common Lisp implementation, and other common CL utilities.",
     "options": {
       "version": {
@@ -11,9 +11,8 @@
           "latest",
           "os-provided",
           "none",
-          "24.10.115",
-          "20.06.14.107",
-          "19.12.13.103"
+          "26.02.116",
+          "24.10.115"
         ],
         "default": "latest",
         "description": "Select a Roswell version to install."
@@ -22,12 +21,9 @@
         "type": "string",
         "proposals": [
           "latest",
+          "2026-01-01",
           "2024-10-12",
-          "2023-10-21",
-          "2023-09-06",
-          "2023-06-18",
-          "2023-02-15",
-          "2022-11-07"
+          "2023-10-21"
         ],
         "default": "latest",
         "description": "Select a Quicklisp dist version to use."
@@ -40,7 +36,7 @@
       "installTools": {
         "type": "boolean",
         "default": true,
-        "description": "Flag indicating whether or not to install the tools specified via the 'toolsToInstall' option. Default is 'false'."
+        "description": "Flag indicating whether or not to install the tools specified via the 'toolsToInstall' option. Default is 'true'."
       },
       "toolsToInstall": {
         "type": "string",
@@ -95,7 +91,7 @@
       "httpProxy": {
         "type": "string",
         "default": "",
-        "description": "Connect to GPG keyservers using a proxy for fetching source code signatures by configuring this option"
+        "description": "HTTP proxy for downloading Roswell and dependencies (passed to curl)."
       }
     },
     "containerEnv": {

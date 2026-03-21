@@ -40,7 +40,7 @@ source dev-container-features-test-lib
 # Feature-specific tests
 # The 'check' command comes from the dev-container-features-test-lib. Syntax is...
 # check <LABEL> <cmd> [args...]
-check "execute command" bash -c "ros 2>&1 | grep 'Common Lisp environment setup Utility.'"
+check "ros is on PATH and runs" bash -c "ros 2>&1 | grep -Fq 'Common Lisp environment setup Utility.'"
 
 # Report results
 # If any of the checks above exited with a non-zero exit code, the test will fail.

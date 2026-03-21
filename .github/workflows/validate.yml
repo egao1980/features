@@ -1,16 +1,55 @@
-name: "Validate devcontainer-feature.json files"
+name: "Validate and test devcontainer features"
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: "Validate devcontainer-feature.json files"
         uses: devcontainers/action@v1
         with:
           validate-only: "true"
           base-path-to-features: "./src"
+
+  test-roswell:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - roswell_ubuntu
+          - roswell_alpine
+          - roswell_qlot_no_ultralisp
+          - roswell_quicklisp_version
+          - roswell_almalinux
+          - roswell_install_sbcl
+          - roswell_install_sbcl_use
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install devcontainer CLI"
+        run: npm install -g @devcontainers/cli
+      - name: "Test roswell — ${{ matrix.scenario }}"
+        run: devcontainer features test -f roswell -s ${{ matrix.scenario }} .
+
+  test-lem:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - lem_alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Install devcontainer CLI"
+        run: npm install -g @devcontainers/cli
+      - name: "Test lem — ${{ matrix.scenario }}"
+        run: devcontainer features test -f lem -s ${{ matrix.scenario }} .

@@ -40,7 +40,7 @@ source dev-container-features-test-lib
 # Feature-specific tests
 # The 'check' command comes from the dev-container-features-test-lib. Syntax is...
 # check <LABEL> <cmd> [args...]
-check "execute command" bash -c "lem --version 2>&1"
+check "lem is on PATH" bash -c "lem --version 2>&1"
 
 # Report results
 # If any of the checks above exited with a non-zero exit code, the test will fail.
