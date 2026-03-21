@@ -39,7 +39,8 @@ install_extra_packages() {
         debian)
             apt-get update -y
             apt-get -y install --no-install-recommends g++ tk-dev xdg-utils
-            apt-get -y install --no-install-recommends libwebkitgtk-6.0-4 libgtk-4-1 2>/dev/null || true
+            apt-get -y install --no-install-recommends \
+                libwebkit2gtk-4.1-0 libwebkitgtk-6.0-4 libgtk-4-1 2>/dev/null || true
             rm -rf /var/lib/apt/lists/*
             ;;
         rhel)
