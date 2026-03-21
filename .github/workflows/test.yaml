@@ -18,7 +18,7 @@ jobs:
         baseImage:
           - debian:latest
           - ubuntu:latest
-          - centos:centos8
+          - rockylinux:8
           - almalinux:latest
           - mcr.microsoft.com/devcontainers/base:ubuntu
           - mcr.microsoft.com/devcontainers/base:alpine

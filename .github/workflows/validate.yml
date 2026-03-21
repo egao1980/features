@@ -46,6 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         scenario:
+          - lem_ubuntu
           - lem_alpine
     steps:
       - uses: actions/checkout@v4
