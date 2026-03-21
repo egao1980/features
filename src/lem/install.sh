@@ -31,21 +31,24 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Lem needs a C++ compiler and xdg-utils beyond what roswell installs
+# Lem needs a C++ compiler and xdg-utils beyond what roswell installs.
+# webkitgtk/gtk4 are optional — only needed for the webview frontend (lem-sdl2).
+# ncurses mode works without them. Install best-effort since older distros lack them.
 install_extra_packages() {
     case ${ADJUSTED_ID} in
         debian)
             apt-get update -y
-            apt-get -y install --no-install-recommends g++ tk-dev xdg-utils \
-                libwebkitgtk-6.0-4 libgtk-4-1
+            apt-get -y install --no-install-recommends g++ tk-dev xdg-utils
+            apt-get -y install --no-install-recommends libwebkitgtk-6.0-4 libgtk-4-1 2>/dev/null || true
             rm -rf /var/lib/apt/lists/*
             ;;
         rhel)
-            dnf -y install gcc-c++ xdg-utils webkit2gtk4.1 gtk4 2>/dev/null \
-                || yum -y install gcc-c++ xdg-utils webkit2gtk4.1 gtk4
+            dnf -y install gcc-c++ xdg-utils 2>/dev/null || yum -y install gcc-c++ xdg-utils
+            dnf -y install webkit2gtk4.1 gtk4 2>/dev/null || true
             ;;
         alpine)
-            apk add g++ xdg-utils webkit2gtk-6.0 gtk4.0
+            apk add g++ xdg-utils
+            apk add webkit2gtk-6.0 gtk4.0 2>/dev/null || true
             ;;
     esac
 }
