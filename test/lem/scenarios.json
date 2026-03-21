@@ -1,6 +1,6 @@
 {
-    "lem_alpine": {
-        "image": "mcr.microsoft.com/devcontainers/base:alpine",
+    "lem_ubuntu": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
             "roswell": {
                 "version": "latest",
@@ -11,7 +11,7 @@
             }
         }
     },
-    "lem_specific_version": {
+    "lem_alpine": {
         "image": "mcr.microsoft.com/devcontainers/base:alpine",
         "features": {
             "roswell": {
@@ -19,7 +19,7 @@
                 "installUltralisp": true
             },
             "lem": {
-                "version": "v2.2.0"
+                "version": "latest"
             }
         }
     }

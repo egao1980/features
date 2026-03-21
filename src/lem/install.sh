@@ -12,6 +12,9 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Roswell's containerEnv PATH only applies at runtime, not during build.
+export PATH="/usr/local/roswell/current/bin:${PATH}"
+
 # Bring in ID, ID_LIKE for distro-specific extra packages
 . /etc/os-release
 
@@ -33,14 +36,16 @@ install_extra_packages() {
     case ${ADJUSTED_ID} in
         debian)
             apt-get update -y
-            apt-get -y install --no-install-recommends g++ tk-dev xdg-utils
+            apt-get -y install --no-install-recommends g++ tk-dev xdg-utils \
+                libwebkitgtk-6.0-4 libgtk-4-1
             rm -rf /var/lib/apt/lists/*
             ;;
         rhel)
-            dnf -y install gcc-c++ xdg-utils 2>/dev/null || yum -y install gcc-c++ xdg-utils
+            dnf -y install gcc-c++ xdg-utils webkit2gtk4.1 gtk4 2>/dev/null \
+                || yum -y install gcc-c++ xdg-utils webkit2gtk4.1 gtk4
             ;;
         alpine)
-            apk add g++ xdg-utils
+            apk add g++ xdg-utils webkit2gtk-6.0 gtk4.0
             ;;
     esac
 }
@@ -60,14 +65,21 @@ elif [ "${USERNAME}" = "none" ] || ! id -u "${USERNAME}" > /dev/null 2>&1; then
 fi
 
 sudo_if() {
+    local user_home
     if [ "$(id -u)" -eq 0 ] && [ "$USERNAME" != "root" ]; then
-        su - "$USERNAME" -c "$(printf '%q ' "$@")"
+        user_home=$(eval echo "~${USERNAME}")
+        su - "$USERNAME" -c "PATH=\"/usr/local/roswell/current/bin:\$PATH:${user_home}/.roswell/bin\" $(printf '%q ' "$@")"
     else
+        export PATH="${PATH}:${HOME}/.roswell/bin"
         "$@"
     fi
 }
 
 install_extra_packages
+
+# Lem's .asd requires deploy at parse time (:defsystem-depends-on).
+# Pre-install it so ASDF can load the system definition.
+sudo_if ros -e '(ql:quickload :deploy :silent t)' -q
 
 case "${LEM_VERSION}" in
     latest)
